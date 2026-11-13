@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#111112">
+<meta name="description" content="Cinema, teatro e histórias para viver na tela grande. Escolha sua sessão, poltrona e combo.">
+<title>{% block title %}CineSENAI — Cinema & Teatro{% endblock %}</title>
+<link rel="icon" href="/static/images/favicon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700;800&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+{% for css in ['style','seatmap','admin','cinema'] %}<link rel="stylesheet" href="{{ url_for('static', filename='css/' + css + '.css') }}">{% endfor %}
+{% block extra_css %}{% endblock %}
+</head><body>
+<a class="skip-link" href="#conteudo">Pular para o conteúdo</a>
+<div class="topline"><div class="container"><span>PARA QUEM AMA VIVER BOAS HISTÓRIAS.</span><span>PROJETO ACADÊMICO · COMPRAS SIMULADAS</span></div></div>
+<header class="navbar"><div class="container nav-container">
+<a class="wordmark" href="/" aria-label="CineSENAI — início"><span class="logo-symbol">C<span>▶</span></span><span>Cine<b>SENAI</b><small>CINEMA & TEATRO</small></span></a>
+<nav aria-label="Navegação principal"><ul class="nav-links"><li><a href="/#programacao" class="{% if request.path == '/' and categoria_ativa != 'teatro' %}active{% endif %}">Filmes</a></li><li><a href="/?categoria=teatro#programacao" class="{% if request.args.get('categoria') == 'teatro' %}active{% endif %}">Teatro</a></li><li><a href="{{ url_for('bomboniere_catalogo') }}">Bomboniere</a></li></ul></nav>
+<a class="my-tickets" href="{{ url_for('meus_ingressos') }}"><i class="fa-solid fa-ticket" aria-hidden="true"></i><span>Meus ingressos</span></a>
+</div></header>
+{% with messages = get_flashed_messages(with_categories=true) %}{% if messages %}<div class="container flash-container" role="status">{% for category, message in messages %}<div class="notice notice-{{ category }}">{{ message }}</div>{% endfor %}</div>{% endif %}{% endwith %}
+<main id="conteudo">{% block content %}{% endblock %}</main>
+<footer class="footer"><div class="container"><div class="footer-content"><a class="wordmark" href="/"><span class="logo-symbol">C<span>▶</span></span><span>Cine<b>SENAI</b><small>CINEMA & TEATRO</small></span></a><p>Algumas histórias merecem<br>mais do que uma tela pequena.</p><nav aria-label="Links do rodapé"><a href="{{ url_for('informacoes') }}">Informações e acessibilidade</a><a href="{{ url_for('meus_ingressos') }}">Consultar ingresso</a><a href="{{ url_for('admin_dashboard') }}">Área de gestão</a><a href="{{ url_for('caderno_projeto') }}">Documentação do projeto</a></nav></div><div class="footer-bottom"><span>© 2026 CineSENAI · Projeto Final SENAI</span><span>Programação demonstrativa. Nenhuma cobrança real.</span></div></div></footer>
+<script src="{{ url_for('static', filename='js/main.js') }}"></script>{% block extra_js %}{% endblock %}
+</body></html>

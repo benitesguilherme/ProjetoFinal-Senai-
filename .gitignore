@@ -1,0 +1,11 @@
+.venv/
+__pycache__/
+*.pyc
+.backups/
+*.log
+.server.pid
+database/*.db
+database/*.db-*
+entrega/
+*.aab
+

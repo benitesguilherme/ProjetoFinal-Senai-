@@ -1,0 +1,191 @@
+{% extends "base.html" %}
+
+{% block title %}Seleção de Assentos | {{ sessao.evento_titulo }} - CineSENAI{% endblock %}
+
+{% block content %}
+<div class="container seatmap-page-wrapper">
+
+    <!-- Fluxo de Progresso -->
+    <div class="checkout-progress-bar">
+        <div class="step-item active">
+            <div class="step-bubble"><i class="fa-solid fa-couch"></i></div>
+            <span>1. Assentos</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item">
+            <div class="step-bubble">2</div>
+            <span>2. Bomboniere</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item">
+            <div class="step-bubble">3</div>
+            <span>3. Pagamento</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item">
+            <div class="step-bubble">4</div>
+            <span>4. Confirmação</span>
+        </div>
+    </div>
+
+    <!-- Dados Ocultos para o Script -->
+    <div id="sessaoInfoData" 
+         data-sessao-id="{{ sessao.id }}" 
+         data-preco-base="{{ sessao.preco_base }}"
+         style="display: none;">
+    </div>
+
+    <div class="page-heading"><p class="eyebrow">O MELHOR LUGAR É O SEU.</p><h1>Escolha onde a história começa.</h1><p>Selecione até 8 poltronas. Depois, escolha inteira ou meia para cada pessoa.</p></div>
+    <!-- Layout Principal -->
+    <div class="seatmap-layout-grid">
+
+        <!-- Área Central da Sala e Grid de Cadeiras -->
+        <div class="seatmap-auditorium-card">
+
+            {% if sessao_esgotada %}
+            <!-- Banner de Sessão Esgotada -->
+            <div style="margin-bottom: 20px; text-align: center; background: rgba(239, 68, 68, 0.15); border: 1px solid #ef4444; border-radius: var(--radius-md); padding: 18px 24px;">
+                <div style="font-size: 1.2rem; font-weight: 800; color: #ef4444; margin-bottom: 6px; display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <i class="fa-solid fa-triangle-exclamation"></i> SESSÃO ESGOTADA (100% OCUPADA)
+                </div>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 12px;">
+                    Todos os {{ total_assentos }} assentos para esta exibição já foram vendidos. Por favor, escolha outro horário.
+                </p>
+                <a href="{{ url_for('evento_detalhes', evento_id=sessao.evento_id) }}" class="btn btn-primary" style="font-size: 0.85rem; padding: 8px 18px;">
+                    <i class="fa-solid fa-calendar-days"></i> Ver Outros Horários deste Filme
+                </a>
+            </div>
+            {% endif %}
+
+            <!-- Tela ou Palco com Arco Luminoso -->
+            <div class="screen-container">
+                <div class="screen-arc"></div>
+                <div class="screen-glow"></div>
+                <div class="screen-title">
+                    <i class="fa-solid {% if 'Teatro' in sessao.sala_nome %}fa-masks-theater{% else %}fa-film{% endif %}"></i>
+                    {% if 'Teatro' in sessao.sala_nome %}PALCO NOBRE - FRENTE{% else %}TELA - {{ sessao.sala_tipo }}{% endif %}
+                </div>
+            </div>
+
+            <!-- Tabela / Grade de Assentos -->
+            <div class="seats-grid-table">
+                {% for letra, assentos in grid_assentos.items() %}
+                <div class="seats-row">
+                    <span class="row-label">{{ letra }}</span>
+                    
+                    <div class="row-seats-group">
+                        {% for a in assentos %}
+                            {# Insere espaçamento visual de corredor se necessário #}
+                            {% if a.numero == 4 or a.numero == 10 %}
+                            <div class="aisle-gap"></div>
+                            {% endif %}
+
+                            <button type="button" 
+                                    class="seat-chair 
+                                           {% if a.ocupado == 1 %}seat-occupied{% endif %} 
+                                           {% if a.tipo_assento == 'VIP' %}seat-vip{% endif %} 
+                                           {% if a.tipo_assento == 'CADEIRANTE' %}seat-wheelchair{% endif %}"
+                                    aria-label="Poltrona {{ a.codigo }}, {{ a.tipo_assento }}, {{ 'ocupada' if a.ocupado else 'disponível' }}" aria-pressed="false" data-seat-id="{{ a.id }}"
+                                    data-seat-code="{{ a.codigo }}"
+                                    data-seat-type="{{ a.tipo_assento }}"
+                                    data-seat-occupied="{{ a.ocupado }}"
+                                    {% if a.ocupado == 1 %}disabled title="Assento {{ a.codigo }} Ocupado"{% else %}title="Assento {{ a.codigo }} ({{ a.tipo_assento }})"{% endif %}>
+                                {% if a.tipo_assento == 'CADEIRANTE' and a.ocupado == 0 %}
+                                    <i class="fa-solid fa-wheelchair" style="font-size: 0.75rem;"></i>
+                                {% elif a.tipo_assento == 'VIP' and a.ocupado == 0 %}
+                                    <i class="fa-solid fa-crown" style="font-size: 0.7rem; color: #e9d5ff;"></i>
+                                {% else %}
+                                    <span>{{ a.numero }}</span>
+                                {% endif %}
+                            </button>
+                        {% endfor %}
+                    </div>
+
+                    <span class="row-label">{{ letra }}</span>
+                </div>
+                {% endfor %}
+            </div>
+
+            <!-- Legenda de Estados das Cadeiras -->
+            <div class="seats-legend-bar">
+                <div class="legend-item">
+                    <div class="legend-swatch swatch-available"></div>
+                    <span>Disponível</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-swatch swatch-selected"></div>
+                    <span>Sua Escolha</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-swatch swatch-occupied"></div>
+                    <span>Ocupado</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-swatch swatch-vip"></div>
+                    <span>Poltrona VIP</span>
+                </div>
+                <div class="legend-item">
+                    <div class="legend-swatch swatch-wheelchair"></div>
+                    <span>Espaço Cadeirante</span>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Barra Lateral de Resumo da Escolha -->
+        <aside class="seatmap-sidebar-card">
+            <div class="sidebar-session-info">
+                <img src="{{ sessao.poster_url }}" alt="{{ sessao.evento_titulo }}" class="sidebar-poster">
+                <div class="sidebar-session-details">
+                    <h3>{{ sessao.evento_titulo }}</h3>
+                    <div class="sidebar-session-meta">
+                        <span><i class="fa-regular fa-clock" style="color: var(--accent-gold);"></i> {{ sessao.data_hora|data_br }}</span>
+                        <span><i class="fa-solid fa-door-open" style="color: var(--accent-cyan);"></i> {{ sessao.sala_nome }}</span>
+                        <span><i class="fa-solid fa-display"></i> {{ sessao.formato }} &bull; {{ sessao.idioma }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <h4 style="font-size: 0.95rem; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span>Assentos Selecionados:</span>
+                    <span id="selectedCount" class="badge-tag badge-category" style="font-size: 0.75rem;">0</span>
+                </h4>
+
+                <p id="emptyStateText" style="color: var(--text-muted); font-size: 0.88rem; font-style: italic; text-align: center; padding: 20px 0;">
+                    <i class="fa-solid fa-arrow-pointer" style="display: block; font-size: 1.5rem; margin-bottom: 8px;"></i>
+                    Clique nas poltronas no mapa para selecioná-las.
+                </p>
+
+                <div id="selectedSeatsList" class="selected-seats-list" aria-live="polite"></div>
+            </div>
+
+            <div class="sidebar-total-block">
+                <div class="total-row">
+                    <span>Preço Base Inteira:</span>
+                    <span>{{ sessao.preco_base|moeda }}</span>
+                </div>
+                <div class="total-row">
+                    <span>Meia-Entrada (50%):</span>
+                    <span>{{ (sessao.preco_base * 0.5)|moeda }}</span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>Subtotal Ingressos:</span>
+                    <span id="grandTotalVal" class="grand-total-val">R$ 0,00</span>
+                </div>
+
+                <button id="btnContinuarBomboniere" type="button" class="btn btn-primary btn-continue-flow" disabled>
+                    <span>Avançar para Bomboniere</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </aside>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/seatmap.js') }}"></script>
+{% endblock %}

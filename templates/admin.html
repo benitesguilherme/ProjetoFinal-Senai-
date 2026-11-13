@@ -1,0 +1,513 @@
+{% extends "base.html" %}
+
+{% block title %}Painel Administrativo | CineSENAI & Teatro{% endblock %}
+
+{% block content %}
+<div class="container admin-dashboard-wrapper">
+
+    <!-- Cabeçalho do Painel -->
+    <div class="admin-header-row">
+        <div>
+            <h1 style="font-size: 2rem; display: flex; align-items: center; gap: 12px;">
+                <i class="fa-solid fa-chart-line" style="color: var(--accent-gold);"></i> 
+                Painel Administrativo do CineSENAI
+            </h1>
+            <p style="color: var(--text-secondary); font-size: 0.95rem; margin-top: 4px;">
+                Monitoramento de vendas em tempo real, gestão de sessões e controle de capacidade das salas.
+            </p>
+        </div>
+
+        <div style="display: flex; align-items: center; gap: 12px;">
+            <form action="{{ url_for('admin_reset_dados') }}" method="POST" onsubmit="return confirm('Tem certeza que deseja restaurar o banco de dados com os dados iniciais? Todas as novas vendas serão redefinidas.');">
+                <button type="submit" class="btn btn-outline" style="font-size: 0.85rem; border-color: rgba(239, 68, 68, 0.4); color: #ef4444;">
+                    <i class="fa-solid fa-arrows-rotate"></i> Restaurar Dados Padrão
+                </button>
+            </form>
+        </div>
+    </div>
+
+    <!-- 1. Cards de Métricas e KPIs -->
+    <div class="admin-metrics-grid">
+        <div class="metric-card">
+            <div class="metric-icon-box icon-box-gold">
+                <i class="fa-solid fa-coins"></i>
+            </div>
+            <div class="metric-content">
+                <h4>Faturamento Total</h4>
+                <div class="metric-val">{{ faturamento_total|moeda }}</div>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon-box icon-box-blue">
+                <i class="fa-solid fa-ticket"></i>
+            </div>
+            <div class="metric-content">
+                <h4>Ingressos Vendidos</h4>
+                <div class="metric-val">{{ total_ingressos_vendidos }}</div>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon-box icon-box-purple">
+                <i class="fa-solid fa-popcorn"></i>
+            </div>
+            <div class="metric-content">
+                <h4>Itens de Bomboniere</h4>
+                <div class="metric-val">{{ total_itens_bomboniere }}</div>
+            </div>
+        </div>
+
+        <div class="metric-card">
+            <div class="metric-icon-box icon-box-green">
+                <i class="fa-solid fa-users"></i>
+            </div>
+            <div class="metric-content">
+                <h4>Ocupação Média</h4>
+                <div class="metric-val">{{ taxa_ocupacao_media }}%</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 2. Taxa de Ocupação das Sessões -->
+    <div class="admin-card-section">
+        <div class="admin-section-header">
+            <h3><i class="fa-solid fa-chair" style="color: var(--accent-gold);"></i> Ocupação das Sessões Programadas</h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">{{ sessoes_stats|length }} sessões cadastradas</span>
+        </div>
+
+        <div class="occupancy-grid">
+            {% for s in sessoes_stats %}
+            <div class="occupancy-card">
+                <div class="occupancy-title">
+                    <span style="color: #fff;">{{ s.evento_titulo }}</span>
+                    <span style="font-size: 0.8rem; color: var(--accent-gold);">{{ s.taxa_ocupacao }}%</span>
+                </div>
+                
+                <div style="font-size: 0.8rem; color: var(--text-secondary); display: flex; justify-content: space-between;">
+                    <span>{{ s.sala_nome }}</span>
+                    <span>{{ s.data_hora|data_br }}</span>
+                </div>
+
+                <div class="occupancy-bar-bg">
+                    <div class="occupancy-bar-fill {% if s.taxa_ocupacao > 75 %}high{% elif s.taxa_ocupacao > 35 %}medium{% else %}low{% endif %}" 
+                         style="width: {{ s.taxa_ocupacao }}%;"></div>
+                </div>
+
+                <div style="font-size: 0.75rem; color: var(--text-muted); display: flex; justify-content: space-between;">
+                    <span>{{ s.ingressos_vendidos }} / {{ s.capacidade }} assentos vendidos</span>
+                    <span>{{ s.formato }} &bull; {{ s.idioma }}</span>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- 3. Tabela de Todas as Vendas Registradas -->
+    <div class="admin-card-section">
+        <div class="admin-section-header">
+            <h3><i class="fa-solid fa-receipt" style="color: var(--accent-gold);"></i> Histórico de Pedidos e Vendas</h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">{{ vendas|length }} registros encontrados</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Localizador</th>
+                        <th>Cliente</th>
+                        <th>Espetáculo / Sala</th>
+                        <th>Horário</th>
+                        <th>Itens</th>
+                        <th>Total</th>
+                        <th>Pagamento</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for v in vendas %}
+                    <tr>
+                        <td>
+                            <strong style="color: var(--accent-gold); font-family: monospace; font-size: 0.95rem;">
+                                #{{ v.codigo_localizador }}
+                            </strong>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600;">{{ v.cliente_nome }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ v.cliente_email }}</div>
+                        </td>
+                        <td>
+                            <div style="font-weight: 600;">{{ v.evento_titulo }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ v.sala_nome }}</div>
+                        </td>
+                        <td style="font-size: 0.82rem; color: var(--text-secondary);">
+                            {{ v.data_hora|data_br }}
+                        </td>
+                        <td>
+                            <span style="font-size: 0.82rem;">
+                                {{ v.qtd_ingressos }} ingr.
+                                {% if v.qtd_bomboniere > 0 %} + {{ v.qtd_bomboniere }} snacks{% endif %}
+                            </span>
+                        </td>
+                        <td>
+                            <strong style="color: #fff;">{{ v.total_geral|moeda }}</strong>
+                        </td>
+                        <td>
+                            <span style="font-size: 0.8rem; background: var(--bg-secondary); padding: 4px 8px; border-radius: 4px; border: 1px solid var(--border-color);">
+                                {{ v.forma_pagamento }}
+                            </span>
+                        </td>
+                        <td>
+                            <span class="badge-status status-aprovado">
+                                {{ v.status }}
+                            </span>
+                        </td>
+                        <td>
+                            <a href="{{ url_for('confirmacao', codigo_localizador=v.codigo_localizador) }}" target="_blank" class="btn btn-outline" style="padding: 6px 12px; font-size: 0.78rem;">
+                                <i class="fa-solid fa-eye"></i> Voucher
+                            </a>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="9" style="text-align: center; padding: 32px; color: var(--text-muted);">
+                            Nenhuma venda registrada ainda.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 4. Cadastro de Nova Sessão -->
+    <div class="admin-card-section">
+        <div class="admin-section-header">
+            <h3><i class="fa-solid fa-calendar-plus" style="color: var(--accent-gold);"></i> Agendar Nova Sessão</h3>
+        </div>
+
+        <form action="{{ url_for('admin_nova_sessao') }}" method="POST">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 20px; align-items: flex-end;">
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Filme / Espetáculo</label>
+                    <select name="evento_id" required style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                        {% for ev in eventos_lista %}
+                        <option value="{{ ev.id }}">{{ ev.titulo }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Sala</label>
+                    <select name="sala_id" required style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                        {% for sa in salas_lista %}
+                        <option value="{{ sa.id }}">{{ sa.nome }} ({{ sa.tipo }})</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Data e Horário</label>
+                    <input type="datetime-local" name="data_hora" required
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Formato</label>
+                    <select name="formato" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                        <option value="IMAX 2D">IMAX 2D</option>
+                        <option value="IMAX 3D">IMAX 3D</option>
+                        <option value="VIP 2D">VIP 2D</option>
+                        <option value="VIP 3D">VIP 3D</option>
+                        <option value="2D Convencional">2D Convencional</option>
+                        <option value="Palco Nobre">Palco Nobre (Teatro)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Idioma / Áudio</label>
+                    <select name="idioma" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                        <option value="LEG">Legendado (LEG)</option>
+                        <option value="DUB">Dublado (DUB)</option>
+                        <option value="NAC">Nacional (NAC)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Preço Base Inteira (R$)</label>
+                    <input type="number" step="0.50" min="10" name="preco_base" value="45.00" required
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <button type="submit" class="btn btn-primary" style="width: 100%;">
+                        <i class="fa-solid fa-plus"></i> Criar Sessão
+                    </button>
+                </div>
+            </div>
+        </form>
+    </div>
+
+    <!-- 5. Tabela de Gestão de Sessões Programadas -->
+    <div class="admin-card-section">
+        <div class="admin-section-header">
+            <h3><i class="fa-solid fa-list-check" style="color: var(--accent-gold);"></i> Gestão das Sessões (Ativação e Cancelamento)</h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">{{ todas_sessoes|length }} sessões no sistema</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Obra / Espetáculo</th>
+                        <th>Sala</th>
+                        <th>Data e Horário</th>
+                        <th>Formato &bull; Áudio</th>
+                        <th>Preço Inteira</th>
+                        <th>Ingressos Vendidos</th>
+                        <th>Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for sess in todas_sessoes %}
+                    <tr>
+                        <td style="font-family: monospace; color: var(--text-muted);">#{{ sess.id }}</td>
+                        <td><strong>{{ sess.evento_titulo }}</strong></td>
+                        <td style="color: var(--text-secondary);">{{ sess.sala_nome }}</td>
+                        <td style="font-size: 0.85rem;">{{ sess.data_hora|data_br }}</td>
+                        <td><span class="slot-badge">{{ sess.formato }} &bull; {{ sess.idioma }}</span></td>
+                        <td style="font-weight: 700; color: #fff;">{{ sess.preco_base|moeda }}</td>
+                        <td>
+                            <span>{{ sess.ingressos_vendidos }} / {{ sess.capacidade }}</span>
+                        </td>
+                        <td>
+                            {% if sess.ativa == 1 %}
+                            <span class="badge-status status-aprovado" style="font-size: 0.75rem;">Disponível</span>
+                            {% else %}
+                            <span class="badge-status" style="background: rgba(239, 68, 68, 0.15); color: #ef4444; border: 1px solid #ef4444; font-size: 0.75rem;">Inativa / Pausada</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <form action="{{ url_for('admin_sessao_toggle', sessao_id=sess.id) }}" method="POST" style="display: inline;">
+                                    <button type="submit" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.75rem;" title="Alternar Disponibilidade">
+                                        {% if sess.ativa == 1 %}
+                                        <i class="fa-solid fa-pause"></i> Pausar
+                                        {% else %}
+                                        <i class="fa-solid fa-play"></i> Reativar
+                                        {% endif %}
+                                    </button>
+                                </form>
+                                <form action="{{ url_for('admin_sessao_excluir', sessao_id=sess.id) }}" method="POST" style="display: inline;" onsubmit="return confirm('Tem certeza que deseja excluir/desativar esta sessão?');">
+                                    <button type="submit" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.75rem; border-color: rgba(239,68,68,0.4); color: #ef4444;" title="Excluir Sessão">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- 6. Cadastro de Nova Obra / Filme (Catálogo) -->
+    <div class="admin-card-section">
+        <div class="admin-section-header">
+            <h3><i class="fa-solid fa-film" style="color: var(--accent-gold);"></i> Cadastrar Novo Filme ou Peça Teatral</h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">Expansão do catálogo CineSENAI</span>
+        </div>
+
+        <form action="{{ url_for('admin_novo_evento') }}" method="POST">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 18px; margin-bottom: 18px;">
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Categoria Cultural *</label>
+                    <select name="categoria_id" required style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                        {% for cat in todas_categorias %}
+                        <option value="{{ cat.id }}">{{ cat.nome }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Título da Obra *</label>
+                    <input type="text" name="titulo" required placeholder="Ex: Blade Runner 2049"
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Título Original</label>
+                    <input type="text" name="titulo_original" placeholder="Ex: Blade Runner 2049"
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Gênero(s) *</label>
+                    <input type="text" name="genero" required placeholder="Ex: Ficção Científica, Mistério"
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Classificação Indicativa</label>
+                    <select name="classificacao" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                        <option value="Livre">Livre (Todos os públicos)</option>
+                        <option value="10">10 Anos</option>
+                        <option value="12">12 Anos</option>
+                        <option value="14" selected>14 Anos</option>
+                        <option value="16">16 Anos</option>
+                        <option value="18">18 Anos (Adulto)</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Duração (em minutos) *</label>
+                    <input type="number" name="duracao" min="30" max="360" value="120" required
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Direção / Concepção</label>
+                    <input type="text" name="diretor" placeholder="Ex: Denis Villeneuve"
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Elenco Principal</label>
+                    <input type="text" name="elenco" placeholder="Ex: Ryan Gosling, Harrison Ford, Ana de Armas"
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">URL do Pôster Vertical</label>
+                    <input type="url" name="poster_url" placeholder="https://..."
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">URL do Banner de Fundo</label>
+                    <input type="url" name="banner_url" placeholder="https://..."
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">URL Embed do Trailer (YouTube)</label>
+                    <input type="url" name="trailer_url" placeholder="https://www.youtube.com/embed/..."
+                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                </div>
+
+                <div>
+                    <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Status de Cartaz</label>
+                    <select name="status" style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+                        <option value="em_cartaz">Em Cartaz (Disponível)</option>
+                        <option value="em_breve">Em Breve</option>
+                        <option value="encerrado">Encerrado</option>
+                    </select>
+                </div>
+            </div>
+
+            <div style="margin-bottom: 18px;">
+                <label style="display: block; font-size: 0.82rem; color: var(--text-secondary); margin-bottom: 6px;">Sinopse Oficial Completa *</label>
+                <textarea name="sinopse" required rows="3" placeholder="Descreva a sinopse detalhada da obra..."
+                          style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 12px 14px; border-radius: var(--radius-sm); outline: none; font-family: inherit; font-size: 0.9rem;"></textarea>
+            </div>
+
+            <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+                <label style="display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 0.9rem; color: #fff;">
+                    <input type="checkbox" name="em_destaque" value="1" style="accent-color: var(--accent-gold); width: 18px; height: 18px;">
+                    <span>Fixar em Destaque no Topo da Página Inicial</span>
+                </label>
+
+                <button type="submit" class="btn btn-primary" style="padding: 12px 28px;">
+                    <i class="fa-solid fa-plus"></i> Cadastrar Obra no Catálogo
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- 7. Tabela de Gestão de Obras do Catálogo -->
+    <div class="admin-card-section">
+        <div class="admin-section-header">
+            <h3><i class="fa-solid fa-clapperboard" style="color: var(--accent-gold);"></i> Gestão das Obras Cadastradas</h3>
+            <span style="font-size: 0.85rem; color: var(--text-muted);">{{ todos_eventos|length }} obras registradas</span>
+        </div>
+
+        <div class="table-responsive">
+            <table class="admin-table">
+                <thead>
+                    <tr>
+                        <th>Pôster</th>
+                        <th>Título</th>
+                        <th>Categoria</th>
+                        <th>Classificação &bull; Duração</th>
+                        <th>Sessões</th>
+                        <th>Status Atual</th>
+                        <th>Alterar Status</th>
+                        <th>Ações</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for ev in todos_eventos %}
+                    <tr>
+                        <td>
+                            <img src="{{ ev.poster_url }}" alt="{{ ev.titulo }}" style="width: 42px; height: 60px; object-fit: cover; border-radius: 4px;">
+                        </td>
+                        <td>
+                            <div style="font-weight: 700; color: #fff;">{{ ev.titulo }}</div>
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">{{ ev.genero }}</div>
+                        </td>
+                        <td>
+                            <span class="badge-tag badge-category" style="font-size: 0.72rem;">{{ ev.categoria_nome }}</span>
+                        </td>
+                        <td style="font-size: 0.82rem;">
+                            {{ ev.classificacao }} &bull; {{ ev.duracao }} min
+                        </td>
+                        <td>
+                            <span class="sessions-count-pill" style="font-size: 0.75rem;">{{ ev.total_sessoes }} sessões</span>
+                        </td>
+                        <td>
+                            {% if ev.status == 'em_cartaz' %}
+                            <span class="badge-status status-aprovado" style="font-size: 0.75rem;">Em Cartaz</span>
+                            {% elif ev.status == 'em_breve' %}
+                            <span class="badge-status" style="background: rgba(0,210,255,0.15); color: #00d2ff; border: 1px solid #00d2ff; font-size: 0.75rem;">Em Breve</span>
+                            {% else %}
+                            <span class="badge-status" style="background: rgba(239,68,68,0.15); color: #ef4444; border: 1px solid #ef4444; font-size: 0.75rem;">Encerrado</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            <form action="{{ url_for('admin_evento_status', evento_id=ev.id) }}" method="POST" style="display: flex; gap: 6px;">
+                                <select name="status" style="background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 0.78rem; outline: none;">
+                                    <option value="em_cartaz" {% if ev.status == 'em_cartaz' %}selected{% endif %}>Em Cartaz</option>
+                                    <option value="em_breve" {% if ev.status == 'em_breve' %}selected{% endif %}>Em Breve</option>
+                                    <option value="encerrado" {% if ev.status == 'encerrado' %}selected{% endif %}>Encerrado</option>
+                                </select>
+                                <button type="submit" class="btn btn-outline" style="padding: 4px 8px; font-size: 0.75rem;" title="Salvar Status">
+                                    <i class="fa-solid fa-check"></i>
+                                </button>
+                            </form>
+                        </td>
+                        <td>
+                            <div style="display: flex; gap: 8px;">
+                                <a href="{{ url_for('evento_detalhes', evento_id=ev.id) }}" target="_blank" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.75rem;" title="Visualizar Página do Evento">
+                                    <i class="fa-solid fa-eye"></i>
+                                </a>
+                                <form action="{{ url_for('admin_evento_status', evento_id=ev.id) }}" method="POST" onsubmit="return confirm('Tem certeza que deseja remover ou encerrar esta obra?');">
+                                    <input type="hidden" name="acao" value="excluir">
+                                    <button type="submit" class="btn btn-outline" style="padding: 5px 10px; font-size: 0.75rem; border-color: rgba(239,68,68,0.4); color: #ef4444;" title="Excluir ou Encerrar Obra">
+                                        <i class="fa-solid fa-trash-can"></i>
+                                    </button>
+                                </form>
+                            </div>
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+</div>
+{% endblock %}

@@ -1,0 +1,580 @@
+{% extends "base.html" %}
+
+{% block title %}Checkout & Pagamento | CineSENAI & Teatro{% endblock %}
+
+{% block content %}
+
+<div class="container" style="padding: 30px 0 60px 0;">
+
+    <!-- Fluxo de Progresso -->
+
+    <div class="checkout-progress-bar">
+
+        <div class="step-item completed">
+
+            <div class="step-bubble"><i class="fa-solid fa-check"></i></div>
+
+            <span>1. Assentos</span>
+
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step-item completed">
+
+            <div class="step-bubble"><i class="fa-solid fa-check"></i></div>
+
+            <span>2. Bomboniere</span>
+
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step-item active">
+
+            <div class="step-bubble"><i class="fa-solid fa-credit-card"></i></div>
+
+            <span>3. Pagamento</span>
+
+        </div>
+
+        <div class="step-divider"></div>
+
+        <div class="step-item">
+
+            <div class="step-bubble">4</div>
+
+            <span>4. Confirmação</span>
+
+        </div>
+
+    </div>
+
+    <!-- Caixa de Alerta Dinâmica para Erros -->
+
+    <div class="simulation-note">Compra demonstrativa, sem cobrança real. Use dados fictícios. Nenhum dado de cartão é enviado ao servidor.</div>
+
+    <button type="button" id="preencherDemo" class="btn btn-outline demo-fill">Preencher dados fictícios para testar</button>
+
+    <div id="checkoutAlertBox" role="alert"></div>
+
+    <!-- Dados do Pedido para o Script -->
+
+    <div id="checkoutData"
+
+         data-sessao-id="{{ sessao.id }}"
+
+         data-assentos-payload='{{ ingressos_detalhe|tojson }}'
+
+         data-bomboniere-payload='{{ bomboniere_detalhe|tojson }}'
+
+         style="display: none;">
+
+    </div>
+
+    <div class="seatmap-layout-grid">
+
+        <!-- Formulários de Identificação e Pagamento -->
+
+        <div>
+
+            <form id="checkoutForm">
+
+                
+
+                <!-- 1. Dados do Comprador -->
+
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px; margin-bottom: 32px;">
+
+                    <h2 style="font-size: 1.35rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+
+                        <i class="fa-solid fa-user-check" style="color: var(--accent-gold);"></i> 
+
+                        1. Identificação do Comprador
+
+                    </h2>
+
+                    
+
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+
+                        <div style="grid-column: span 2;">
+
+                            <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">Nome Completo *</label>
+
+                            <input type="text" id="inputNome" required placeholder="Ex: Carlos Eduardo Silva" 
+
+                                   style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 12px 16px; border-radius: var(--radius-sm); outline: none;">
+
+                        </div>
+
+                        <div>
+
+                            <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">CPF (para emissão do ingresso) *</label>
+
+                            <input type="text" id="inputCpf" required placeholder="000.000.000-00" maxlength="14" 
+
+                                   style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 12px 16px; border-radius: var(--radius-sm); outline: none;">
+
+                        </div>
+
+                        <div>
+
+                            <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">Telefone / Celular *</label>
+
+                            <input type="text" id="inputTelefone" required placeholder="(11) 98765-4321" maxlength="15" 
+
+                                   style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 12px 16px; border-radius: var(--radius-sm); outline: none;">
+
+                        </div>
+
+                        <div style="grid-column: span 2;">
+
+                            <label style="display: block; font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 6px;">E-mail (para consultar o pedido) *</label>
+
+                            <input type="email" id="inputEmail" required placeholder="seu.email@exemplo.com" 
+
+                                   style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 12px 16px; border-radius: var(--radius-sm); outline: none;">
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <!-- 2. Escolha da Forma de Pagamento -->
+
+                <div style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px;">
+
+                    <h2 style="font-size: 1.35rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+
+                        <i class="fa-solid fa-wallet" style="color: var(--accent-gold);"></i> 
+
+                        2. Forma de Pagamento (Ambiente Simulado)
+
+                    </h2>
+
+                    <!-- Seletor de Métodos de Pagamento -->
+
+                    <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 28px;">
+
+                        <div class="payment-method-radio-card selected" data-method="PIX" 
+
+                             style="background: var(--bg-secondary); border: 2px solid var(--accent-gold); border-radius: var(--radius-md); padding: 18px; text-align: center; cursor: pointer; transition: var(--transition);">
+
+                            <i class="fa-brands fa-pix" style="font-size: 2rem; color: #00d2ff; margin-bottom: 8px;"></i>
+
+                            <div style="font-weight: 700; font-size: 0.95rem;">PIX</div>
+
+                            <div style="font-size: 0.75rem; color: var(--accent-green); font-weight: 600;">Simulação imediata</div>
+
+                        </div>
+
+                        <div class="payment-method-radio-card" data-method="CARTAO_CREDITO"
+
+                             style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; text-align: center; cursor: pointer; transition: var(--transition);">
+
+                            <i class="fa-solid fa-credit-card" style="font-size: 2rem; color: var(--accent-gold); margin-bottom: 8px;"></i>
+
+                            <div style="font-weight: 700; font-size: 0.95rem;">Cartão de Crédito</div>
+
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Sem cobrança real</div>
+
+                        </div>
+
+                        <div class="payment-method-radio-card" data-method="BALCAO"
+
+                             style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 18px; text-align: center; cursor: pointer; transition: var(--transition);">
+
+                            <i class="fa-solid fa-ticket-simple" style="font-size: 2rem; color: #a855f7; margin-bottom: 8px;"></i>
+
+                            <div style="font-weight: 700; font-size: 0.95rem;">Bilheteria / Balcão</div>
+
+                            <div style="font-size: 0.75rem; color: var(--text-muted);">Pague no Guichê</div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- Detalhes do Pagamento PIX -->
+
+                    <div id="section-PIX" class="payment-detail-section" style="display: block;">
+
+                        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px; display: grid; grid-template-columns: 180px 1fr; gap: 24px; align-items: center;">
+
+                            <div style="text-align: center; background: #fff; padding: 10px; border-radius: var(--radius-sm);">
+
+                                <img src="{{ pix_qr_code }}" alt="QR Code PIX Simulado" style="width: 160px; height: 160px; display: block; margin: 0 auto;">
+
+                            </div>
+
+                            <div>
+
+                                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+
+                                    <span style="font-weight: 700; color: #fff; font-size: 1.05rem;">Pix de demonstração</span>
+
+                                    <span style="font-size: 0.8rem; background: rgba(239, 68, 68, 0.2); color: #ef4444; border: 1px solid #ef4444; padding: 2px 8px; border-radius: var(--radius-full); font-weight: 700;">
+
+                                        <i class="fa-regular fa-clock"></i> <span>DEMO</span>
+
+                                    </span>
+
+                                </div>
+
+                                <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 12px;">
+
+                                    Este QR Code é ilustrativo e não funciona em aplicativos bancários. Clique em Confirmar e Emitir Ingressos para concluir a simulação.
+
+                                </p>
+
+                                
+
+                                <div style="background: rgba(0,0,0,0.5); padding: 10px 14px; border-radius: var(--radius-sm); border: 1px dashed var(--border-color); font-family: monospace; font-size: 0.8rem; color: var(--text-muted); word-break: break-all; margin-bottom: 12px;" id="pixCodigoTexto">
+
+                                    {{ pix_chave }}
+
+                                </div>
+
+                                <button type="button" id="btnCopiarPix" class="btn btn-outline" style="padding: 8px 16px; font-size: 0.85rem;">
+
+                                    <i class="fa-solid fa-copy"></i> Copiar Código PIX
+
+                                </button>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- Detalhes do Pagamento Cartão de Crédito -->
+
+                    <div id="section-CARTAO_CREDITO" class="payment-detail-section" style="display: none;">
+
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 32px; align-items: center;">
+
+                            
+
+                            <!-- Preview Visual do Cartão de Crédito -->
+
+                            <div style="background: linear-gradient(135deg, #1f2438 0%, #0d0f17 100%); border: 1px solid rgba(255, 255, 255, 0.15); border-radius: 16px; padding: 24px; box-shadow: 0 10px 30px rgba(0,0,0,0.6); position: relative; overflow: hidden; min-height: 190px; display: flex; flex-direction: column; justify-content: space-between;">
+
+                                <div style="display: flex; justify-content: space-between; align-items: center;">
+
+                                    <span style="font-size: 0.85rem; font-weight: 800; color: var(--accent-gold); letter-spacing: 1px;">CineSENAI BLACK</span>
+
+                                    <div id="previewCardBrandContainer" style="display: flex; align-items: center; gap: 8px;">
+
+                                        <span id="previewCardBrandName" style="font-size: 0.72rem; font-weight: 800; letter-spacing: 1px; color: #cbd5e1;">MASTERCARD</span>
+
+                                        <i id="previewCardBrandIcon" class="fa-brands fa-cc-mastercard" style="font-size: 2rem; color: #ff5f00;"></i>
+
+                                    </div>
+
+                                </div>
+
+                                <div style="margin: 18px 0;">
+
+                                    <div style="width: 40px; height: 30px; background: #eab308; border-radius: 4px; margin-bottom: 12px; opacity: 0.85;"></div>
+
+                                    <div id="previewCardNum" style="font-family: monospace; font-size: 1.15rem; letter-spacing: 3px; color: #fff;">•••• •••• •••• ••••</div>
+
+                                </div>
+
+                                <div style="display: flex; justify-content: space-between; align-items: flex-end; font-size: 0.8rem; text-transform: uppercase;">
+
+                                    <div>
+
+                                        <div style="font-size: 0.65rem; color: var(--text-muted);">Titular</div>
+
+                                        <div id="previewCardName" style="font-weight: 700; color: #fff;">NOME NO CARTÃO</div>
+
+                                    </div>
+
+                                    <div>
+
+                                        <div style="font-size: 0.65rem; color: var(--text-muted);">Validade</div>
+
+                                        <div id="previewCardExp" style="font-weight: 700; color: #fff;">MM/AA</div>
+
+                                    </div>
+
+                                </div>
+
+                            </div>
+
+                            <!-- Campos do Cartão com Validação Visual de Bandeira -->
+
+                            <div style="display: flex; flex-direction: column; gap: 14px;">
+
+                                <div>
+
+                                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px;">
+
+                                        <label style="font-size: 0.82rem; color: var(--text-secondary);">Número do Cartão *</label>
+
+                                        <div id="brandBadgeList" style="display: flex; gap: 4px;">
+
+                                            <span class="brand-pill" data-brand="VISA" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); color: var(--text-muted);">VISA</span>
+
+                                            <span class="brand-pill active" data-brand="MASTERCARD" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); color: var(--text-muted);">MASTER</span>
+
+                                            <span class="brand-pill" data-brand="ELO" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); color: var(--text-muted);">ELO</span>
+
+                                            <span class="brand-pill" data-brand="AMEX" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); color: var(--text-muted);">AMEX</span>
+
+                                            <span class="brand-pill" data-brand="HIPERCARD" style="font-size: 0.65rem; padding: 2px 6px; border-radius: 4px; background: rgba(255,255,255,0.06); color: var(--text-muted);">HIPER</span>
+
+                                        </div>
+
+                                    </div>
+
+                                    <div style="position: relative;">
+
+                                        <input type="text" id="cardNumero" aria-label="Número do cartão de demonstração" placeholder="0000 0000 0000 0000" maxlength="19"
+
+                                               style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+
+                                        <span id="cardNumStatusIcon" style="position: absolute; right: 12px; top: 50%; transform: translateY(-50%); font-size: 0.9rem; display: none;"></span>
+
+                                    </div>
+
+                                    <span id="cardNumErrorMsg" style="font-size: 0.72rem; color: #ef4444; display: none; margin-top: 2px;"></span>
+
+                                </div>
+
+                                <div>
+
+                                    <label style="font-size: 0.82rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Nome Impresso no Cartão *</label>
+
+                                    <input type="text" id="cardNome" placeholder="Ex: CARLOS E SILVA"
+
+                                           style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+
+                                    <span id="cardNomeErrorMsg" style="font-size: 0.72rem; color: #ef4444; display: none; margin-top: 2px;"></span>
+
+                                </div>
+
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+
+                                    <div>
+
+                                        <label style="font-size: 0.82rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Validade (MM/AA) *</label>
+
+                                        <input type="text" id="cardValidade" placeholder="MM/AA" maxlength="5"
+
+                                               style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+
+                                        <span id="cardExpErrorMsg" style="font-size: 0.72rem; color: #ef4444; display: none; margin-top: 2px;"></span>
+
+                                    </div>
+
+                                    <div>
+
+                                        <label style="font-size: 0.82rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">CVV *</label>
+
+                                        <input type="text" id="cardCvv" placeholder="123" maxlength="4"
+
+                                               style="width: 100%; background: var(--bg-secondary); border: 1px solid var(--border-color); color: #fff; padding: 10px 14px; border-radius: var(--radius-sm); outline: none;">
+
+                                        <span id="cardCvvErrorMsg" style="font-size: 0.72rem; color: #ef4444; display: none; margin-top: 2px;"></span>
+
+                                    </div>
+
+                                </div>
+
+                                <div>
+
+                                    <label style="font-size: 0.82rem; color: var(--text-secondary); display: block; margin-bottom: 4px;">Pagamento simulado</label>
+
+                                    <p>Pagamento único de {{ total_geral|moeda }}. Nenhuma transação bancária será realizada.</p>
+
+                                </div>
+
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                    <!-- Detalhes do Pagamento Balcão / Bilheteria -->
+
+                    <div id="section-BALCAO" class="payment-detail-section" style="display: none;">
+
+                        <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-md); padding: 24px; text-align: center;">
+
+                            <i class="fa-solid fa-store" style="font-size: 2.5rem; color: #a855f7; margin-bottom: 12px;"></i>
+
+                            <h3 style="font-size: 1.15rem; margin-bottom: 8px;">Pagamento Presencial no Guichê</h3>
+
+                            <p style="color: var(--text-secondary); font-size: 0.9rem; max-width: 500px; margin: 0 auto;">
+
+                                Seus assentos serão reservados temporariamente. Apresente o código localizador gerado no guichê do CineSENAI em até 30 minutos antes do início da sessão para efetuar o pagamento e retirar os bilhetes físicos.
+
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+            </form>
+
+        </div>
+
+        <!-- Barra Lateral de Resumo Final do Pedido -->
+
+        <aside class="seatmap-sidebar-card">
+
+            <div class="sidebar-session-info">
+
+                <img src="{{ sessao.poster_url }}" alt="{{ sessao.evento_titulo }}" class="sidebar-poster">
+
+                <div class="sidebar-session-details">
+
+                    <h3>{{ sessao.evento_titulo }}</h3>
+
+                    <div class="sidebar-session-meta">
+
+                        <span><i class="fa-solid fa-door-open" style="color: var(--accent-gold);"></i> {{ sessao.sala_nome }}</span>
+
+                        <span><i class="fa-regular fa-clock"></i> {{ sessao.data_hora|data_br }}</span>
+
+                        <span><i class="fa-solid fa-display"></i> {{ sessao.formato }}</span>
+
+                    </div>
+
+                </div>
+
+            </div>
+
+            <!-- Ingressos Detalhados -->
+
+            <div>
+
+                <h4 style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+
+                    Ingressos ({{ ingressos_detalhe|length }}):
+
+                </h4>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+
+                    {% for ing in ingressos_detalhe %}
+
+                    <div style="background: var(--bg-secondary); padding: 8px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+
+                        <div style="display: flex; align-items: center; gap: 8px;">
+
+                            <span class="seat-code-badge">{{ ing.codigo }}</span>
+
+                            <span style="color: var(--text-secondary);">{{ ing.tipo_ingresso|capitalize }}</span>
+
+                        </div>
+
+                        <span style="font-weight: 700; color: #fff;">{{ ing.preco|moeda }}</span>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            <!-- Produtos da Bomboniere Detalhados -->
+
+            {% if bomboniere_detalhe %}
+
+            <div>
+
+                <h4 style="font-size: 0.85rem; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 10px;">
+
+                    Bomboniere:
+
+                </h4>
+
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+
+                    {% for b in bomboniere_detalhe %}
+
+                    <div style="background: var(--bg-secondary); padding: 8px 12px; border-radius: 6px; display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem;">
+
+                        <span style="color: var(--text-secondary);">{{ b.quantidade }}x {{ b.nome }}</span>
+
+                        <span style="font-weight: 700; color: #fff;">{{ b.subtotal|moeda }}</span>
+
+                    </div>
+
+                    {% endfor %}
+
+                </div>
+
+            </div>
+
+            {% endif %}
+
+            <!-- Totalizadores -->
+
+            <div class="sidebar-total-block">
+
+                <div class="total-row">
+
+                    <span>Subtotal Ingressos:</span>
+
+                    <span>{{ total_ingressos|moeda }}</span>
+
+                </div>
+
+                {% if total_bomboniere > 0 %}
+
+                <div class="total-row">
+
+                    <span>Subtotal Bomboniere:</span>
+
+                    <span>{{ total_bomboniere|moeda }}</span>
+
+                </div>
+
+                {% endif %}
+
+                <div class="total-row grand-total">
+
+                    <span>Total a Pagar:</span>
+
+                    <span class="grand-total-val">{{ total_geral|moeda }}</span>
+
+                </div>
+
+                <button id="btnFinalizarCompra" type="button" class="btn btn-primary" style="width: 100%; margin-top: 14px;">
+
+                    <i class="fa-solid fa-shield-halved"></i>
+
+                    <span>Confirmar e Emitir Ingressos</span>
+
+                </button>
+
+                <div style="text-align: center; font-size: 0.75rem; color: var(--text-muted); margin-top: 10px;">
+
+                    <i class="fa-solid fa-lock"></i> Demonstração SENAI &bull; Sem cobrança real
+
+                </div>
+
+            </div>
+
+        </aside>
+
+    </div>
+
+</div>
+
+{% endblock %}
+
+{% block extra_js %}
+
+<script src="{{ url_for('static', filename='js/checkout.js') }}"></script>
+
+{% endblock %}
+

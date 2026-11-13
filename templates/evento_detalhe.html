@@ -1,0 +1,161 @@
+{% extends "base.html" %}
+
+{% block title %}{{ evento.titulo }} | Ingressos e Horários - CineSENAI & Teatro{% endblock %}
+
+{% block content %}
+<div class="container" style="padding-top: 30px;">
+
+    <!-- Breadcrumb -->
+    <div style="margin-bottom: 20px; font-size: 0.85rem; color: var(--text-muted); display: flex; align-items: center; gap: 8px;">
+        <a href="{{ url_for('index') }}" style="color: var(--text-secondary);"><i class="fa-solid fa-house"></i> Início</a>
+        <span>&bull;</span>
+        <a href="{{ url_for('index', categoria=evento.categoria_slug) }}" style="color: var(--text-secondary);">{{ evento.categoria_nome }}</a>
+        <span>&bull;</span>
+        <span style="color: var(--text-primary); font-weight: 600;">{{ evento.titulo }}</span>
+    </div>
+
+    <!-- Header do Evento com Backdrop e Ficha Técnica -->
+    <div class="detail-hero-banner">
+        <div class="detail-banner-bg" style="background-image: url('{{ evento.banner_url }}');"></div>
+        <div class="detail-banner-gradient"></div>
+
+        <div class="detail-content-wrap">
+            <img src="{{ evento.poster_url }}" alt="{{ evento.titulo }}" class="detail-poster-img">
+
+            <div class="detail-info-block">
+                <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+                    <span class="badge-tag badge-category">{{ evento.categoria_nome }}</span>
+                    <span class="badge-rating rating-{{ evento.classificacao|lower }}" title="Classificação Indicativa">
+                        {{ evento.classificacao }}
+                    </span>
+                    <span style="color: var(--text-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-regular fa-clock" style="color: var(--accent-gold);"></i> {{ evento.duracao }} minutos
+                    </span>
+                    <span style="color: var(--text-secondary); font-size: 0.9rem; display: flex; align-items: center; gap: 6px;">
+                        <i class="fa-solid fa-tags" style="color: var(--accent-cyan);"></i> {{ evento.genero }}
+                    </span>
+                </div>
+
+                <h1 class="detail-title">{{ evento.titulo }}</h1>
+                {% if evento.titulo_original %}
+                <p style="color: var(--accent-gold); font-size: 1.15rem; margin-top: -8px;">{{ evento.titulo_original }}</p>
+                {% endif %}
+
+                <p style="color: var(--text-secondary); line-height: 1.7; font-size: 1rem; max-width: 800px;">
+                    {{ evento.sinopse }}
+                </p>
+
+                <div class="detail-cast-list">
+                    {% if evento.diretor %}
+                    <p><strong>Direção / Concepção:</strong> {{ evento.diretor }}</p>
+                    {% endif %}
+                    {% if evento.elenco %}
+                    <p style="margin-top: 4px;"><strong>Elenco Principal:</strong> {{ evento.elenco }}</p>
+                    {% endif %}
+                </div>
+
+                <div style="display: flex; align-items: center; gap: 16px; margin-top: 12px;">
+                    <a href="#sessoes" class="btn btn-primary">
+                        <i class="fa-solid fa-ticket"></i> Ver Sessões e Ingressos
+                    </a>
+                    {% if evento.trailer_url %}
+                    <a href="#trailer" class="btn btn-outline">
+                        <i class="fa-solid fa-play"></i> Trailer Oficial
+                    </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Seção de Sessões e Horários Disponíveis -->
+    <section id="sessoes" class="schedule-section">
+        <div style="margin-bottom: 24px; display: flex; align-items: center; justify-content: space-between;">
+            <div>
+                <h2 style="font-size: 1.75rem; display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-regular fa-calendar-days" style="color: var(--accent-gold);"></i> 
+                    Horários e Sessões Disponíveis
+                </h2>
+                <p style="color: var(--text-secondary); font-size: 0.9rem; margin-top: 4px;">
+                    Selecione o melhor horário para escolher seus assentos na sala interativa.
+                </p>
+            </div>
+        </div>
+
+        {% if sessoes_por_data %}
+            <div class="date-tabs" role="tablist" aria-label="Dia da sessão">
+                {% for data_str, sessoes_lista in sessoes_por_data.items() %}
+                <button type="button" class="date-tab {% if loop.first %}active{% endif %}" role="tab" id="date-{{ data_str }}" aria-controls="sessions-{{ data_str }}" aria-selected="{{ 'true' if loop.first else 'false' }}" data-date="{{ data_str }}">{{ sessoes_lista[0].data_hora|dia_mes_br }}</button>
+                {% endfor %}
+            </div>
+            {% for data_str, sessoes_lista in sessoes_por_data.items() %}
+            <div class="schedule-date-group" role="tabpanel" id="sessions-{{ data_str }}" aria-labelledby="date-{{ data_str }}" data-session-date="{{ data_str }}" {% if not loop.first %}hidden{% endif %}>
+                <div class="schedule-date-header">
+                    <i class="fa-solid fa-clock"></i>
+                    <span>{{ sessoes_lista[0].data_hora|dia_mes_br }}</span>
+                </div>
+
+                <div class="sessions-slots-grid">
+                    {% for s in sessoes_lista %}
+                    <div class="session-slot-card">
+                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                            <div class="slot-time">{{ s.data_hora|hora_br }}</div>
+                            <span class="slot-badge {% if 'IMAX' in s.formato %}format-imax{% elif 'VIP' in s.formato %}format-vip{% endif %}">
+                                {{ s.formato }}
+                            </span>
+                        </div>
+
+                        <div class="slot-room">
+                            <i class="fa-solid fa-door-open" style="color: var(--accent-gold);"></i> {{ s.sala_nome }}
+                        </div>
+
+                        <div class="slot-badges-row">
+                            <span class="slot-badge" style="background: rgba(255,255,255,0.05);">
+                                <i class="fa-solid fa-language"></i> 
+                                {% if s.idioma == 'LEG' %}Legendado{% elif s.idioma == 'DUB' %}Dublado{% else %}Nacional{% endif %}
+                            </span>
+                        </div>
+
+                        <div class="slot-price-row">
+                            <div>
+                                <div style="font-size: 0.72rem; color: var(--text-muted); text-transform: uppercase;">Inteira / Meia</div>
+                                <div class="slot-price">{{ s.preco_base|moeda }} <span style="font-size: 0.78rem; color: var(--accent-gold); font-weight: 500;">/ {{ (s.preco_base * 0.5)|moeda }}</span></div>
+                            </div>
+                        </div>
+
+                        <a href="{{ url_for('sessao_assentos', sessao_id=s.id) }}" class="btn btn-primary" style="width: 100%; padding: 10px; font-size: 0.88rem; margin-top: 4px;">
+                            <i class="fa-solid fa-couch"></i> Selecionar Lugares
+                        </a>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+            {% endfor %}
+        {% else %}
+            <div style="text-align: center; padding: 40px; color: var(--text-muted);">
+                <i class="fa-regular fa-calendar-xmark" style="font-size: 2.5rem; margin-bottom: 12px;"></i>
+                <p>Nenhuma sessão cadastrada no momento para este espetáculo.</p>
+            </div>
+        {% endif %}
+    </section>
+
+    <!-- Trailer Oficial Incorporado -->
+    {% if evento.trailer_url %}
+    <section id="trailer" style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-lg); padding: 32px; margin-bottom: 60px;">
+        <h2 style="font-size: 1.5rem; margin-bottom: 20px; display: flex; align-items: center; gap: 10px;">
+            <i class="fa-brands fa-youtube" style="color: #ff0000;"></i> Trailer Oficial
+        </h2>
+        <div style="position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <iframe 
+                src="{{ evento.trailer_url }}" 
+                title="Trailer de {{ evento.titulo }}" 
+                style="position: absolute; top:0; left: 0; width: 100%; height: 100%; border: 0;" 
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" 
+                allowfullscreen>
+            </iframe>
+        </div>
+    </section>
+    {% endif %}
+
+</div>
+{% endblock %}

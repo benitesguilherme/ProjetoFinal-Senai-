@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block title %}Página Não Encontrada (404) | CineSENAI & Teatro{% endblock %}
+
+{% block content %}
+<div class="container" style="text-align: center; padding: 100px 20px 120px 20px;">
+    <div style="font-size: 5rem; color: var(--accent-gold); margin-bottom: 16px;">
+        <i class="fa-solid fa-film"></i> 404
+    </div>
+    <h1 style="font-size: 2.2rem; margin-bottom: 12px;">Ops! Esta sessão saiu de cartaz.</h1>
+    <p style="color: var(--text-secondary); max-width: 500px; margin: 0 auto 32px auto; font-size: 1rem;">
+        A página que você está procurando não existe ou foi transferida para outra sala. Verifique o link ou retorne à programação oficial.
+    </p>
+    <a href="{{ url_for('index') }}" class="btn btn-primary">
+        <i class="fa-solid fa-house"></i> Voltar à Programação em Cartaz
+    </a>
+</div>
+{% endblock %}

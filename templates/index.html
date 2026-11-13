@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% block title %}CineSENAI — A próxima história começa aqui{% endblock %}
+{% block content %}
+{% if destaques and not busca and categoria_ativa == 'todos' %}
+{% set filme = destaques[0] %}
+<section class="cinema-hero" aria-label="Filme em destaque">
+<img class="cinema-hero-image" src="{{ filme.banner_url }}" alt="Cena de {{ filme.titulo }}" fetchpriority="high"><div class="cinema-hero-shade"></div>
+<div class="container cinema-hero-inner">
+<div class="hero-eyebrow"><span></span> GRANDES HISTÓRIAS, DE VOLTA À TELA</div>
+<div class="hero-copy"><p class="eyebrow">SESSÃO ESPECIAL · CINESENAI</p>
+<h1>{% if filme.id == 1 %}O JOGO DA<br><span>IMITAÇÃO</span>{% else %}{{ filme.titulo }}{% endif %}</h1>
+<div class="hero-facts"><span class="badge-rating rating-{{ filme.classificacao|lower }}">{{ filme.classificacao }}</span><span>{{ filme.duracao }} min</span><span>{{ filme.genero.split(',')[0] }}</span><span class="outline-tag">2D</span></div>
+<p class="hero-description">{% if filme.id == 1 %}Uma mente extraordinária. Um segredo capaz de mudar o mundo. Conheça a história de Alan Turing na tela grande.{% else %}{{ filme.sinopse|truncate(170) }}{% endif %}</p>
+<div class="hero-actions"><a class="btn btn-primary" href="{{ url_for('evento_detalhes', evento_id=filme.id) }}#sessoes"><i class="fa-solid fa-ticket" aria-hidden="true"></i> Escolher minha sessão <span>↗</span></a><a class="hero-trailer" href="{{ url_for('evento_detalhes', evento_id=filme.id) }}#trailer"><span>▷</span> Assistir ao trailer</a></div></div>
+<div class="hero-bottom"><span>HISTÓRIAS QUE MERECEM A TELA GRANDE.</span><a href="#programacao">EXPLORE A PROGRAMAÇÃO <span>↓</span></a></div>
+</div></section>{% endif %}
+<section id="programacao" class="container program-section">
+<div class="section-heading"><div><p class="eyebrow">APAGAM-SE AS LUZES. COMEÇA A EXPERIÊNCIA.</p><h2>{% if busca %}Sua próxima história{% elif categoria_ativa == 'teatro' %}O palco espera por você.{% else %}Encontre seu próximo filme.{% endif %}</h2></div><span class="program-count">{{ eventos|length }} títulos na programação</span></div>
+<div class="program-toolbar"><nav class="program-tabs" aria-label="Filtrar programação">
+<a class="{% if categoria_ativa == 'todos' %}active{% endif %}" href="{{ url_for('index', q=busca) }}#programacao">Em cartaz</a>
+<a class="{% if categoria_ativa == 'cinema' %}active{% endif %}" href="{{ url_for('index', categoria='cinema', q=busca) }}#programacao">Cinema</a>
+<a class="{% if categoria_ativa == 'teatro' %}active{% endif %}" href="{{ url_for('index', categoria='teatro', q=busca) }}#programacao">Teatro <span>AO VIVO</span></a></nav>
+<form class="catalog-search" action="/#programacao" method="get" role="search"><input type="hidden" name="categoria" value="{{ categoria_ativa }}"><label class="sr-only" for="busca">Buscar filme, gênero ou diretor</label><input id="busca" type="search" name="q" value="{{ busca }}" placeholder="Qual história você quer viver?"><button aria-label="Buscar"><i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i></button></form></div>
+{% if busca %}<p class="search-feedback">Resultados para “{{ busca }}” <a href="{{ url_for('index', categoria=categoria_ativa) }}#programacao">Limpar busca ×</a></p>{% endif %}
+{% if eventos %}<div class="film-grid">{% for ev in eventos %}<article class="film-card">
+<a class="film-art" href="{{ url_for('evento_detalhes', evento_id=ev.id) }}" aria-label="Ver sinopse e sessões de {{ ev.titulo }}">
+<img src="{{ ev.poster_url }}" alt="Cartaz de {{ ev.titulo }}" loading="lazy" width="500" height="750">
+{% if ev.categoria_slug == 'teatro' %}<div class="theatre-poster-title"><span>NO PALCO</span><strong>{{ ev.titulo }}</strong></div>{% endif %}
+<span class="film-ribbon">{% if ev.categoria_slug == 'teatro' %}ESPETÁCULO{% elif ev.id == 1 %}SESSÃO ESPECIAL{% else %}EM CARTAZ{% endif %}</span><span class="film-hover">Ver sessões <span>↗</span></span></a>
+<div class="film-meta"><span class="badge-rating rating-{{ ev.classificacao|lower }}">{{ 'L' if ev.classificacao == 'Livre' else ev.classificacao }}</span><span>{{ ev.genero.split(',')[0] }}</span><span>· {{ ev.duracao }} min</span></div>
+<h3><a href="{{ url_for('evento_detalhes', evento_id=ev.id) }}">{{ ev.titulo }}</a></h3><a class="film-session-link" href="{{ url_for('evento_detalhes', evento_id=ev.id) }}#sessoes">Ver horários <span>↗</span></a>
+</article>{% endfor %}</div>
+{% else %}<div class="empty-results"><i class="fa-solid fa-film"></i><h3>Nenhum título por aqui.</h3><p>Tente outro filme, gênero ou diretor.</p><a class="btn btn-primary" href="/#programacao">Ver programação completa</a></div>{% endif %}
+</section>
+{% if not busca %}<section class="container extras-section" id="bomboniere"><a class="snack-feature" href="{{ url_for('bomboniere_catalogo') }}"><div><p class="eyebrow">O MELHOR PAR DO SEU FILME</p><h2>O roteiro fica melhor<br>com pipoca.</h2><p>Combos para dividir. Ou para chamar de seu.</p><span class="text-action">Conhecer os combos <b>↗</b></span></div><img src="/static/images/pipoca.jpg" alt="Pipoca fresquinha para acompanhar a sessão" loading="lazy"></a><a class="theatre-feature" href="/?categoria=teatro#programacao"><img src="/static/images/teatro.jpg" alt="Palco de teatro iluminado" loading="lazy"><div><p class="eyebrow">A EMOÇÃO ACONTECE AO VIVO</p><h2>Da tela<br>para o palco.</h2><span class="text-action">Explore o teatro <b>↗</b></span></div></a></section>
+<section class="container experience-strip"><div><i class="fa-solid fa-couch"></i><span>Seu lugar, do seu jeito<small>Escolha sua poltrona no mapa.</small></span></div><div><i class="fa-solid fa-ticket"></i><span>Inteira ou meia-entrada<small>Um ingresso para cada pessoa.</small></span></div><div><i class="fa-solid fa-qrcode"></i><span>Tudo pronto no seu ingresso<small>Sessão, lugares e combos em um só lugar.</small></span></div></section>{% endif %}
+{% endblock %}

@@ -1,0 +1,222 @@
+{% extends "base.html" %}
+
+{% block title %}Bomboniere & Pipoca | CineSENAI & Teatro{% endblock %}
+
+{% block content %}
+<div class="container" style="padding: 30px 0 60px 0;">
+
+    <!-- Fluxo de Progresso -->
+    <div class="checkout-progress-bar">
+        <div class="step-item completed">
+            <div class="step-bubble"><i class="fa-solid fa-check"></i></div>
+            <span>1. Assentos</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item active">
+            <div class="step-bubble"><i class="fa-solid fa-bowl-food"></i></div>
+            <span>2. Bomboniere</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item">
+            <div class="step-bubble">3</div>
+            <span>3. Pagamento</span>
+        </div>
+        <div class="step-divider"></div>
+        <div class="step-item">
+            <div class="step-bubble">4</div>
+            <span>4. Confirmação</span>
+        </div>
+    </div>
+
+    <!-- Metadados Ocultos -->
+    <div id="bombonierePageData"
+         data-sessao-id="{{ sessao.id }}"
+         data-assentos-ids="{{ assentos_ids }}"
+         data-tipos-ingressos="{{ tipos_ingressos }}"
+         style="display: none;">
+    </div>
+
+    <!-- Calcula Subtotal dos Ingressos no Backend para Segurança -->
+    {% set ns = namespace(subtotal_ingressos=0.0) %}
+    {% if assentos_ids and tipos_ingressos %}
+        {% set tipos_arr = tipos_ingressos.split(',') %}
+        {% for tipo in tipos_arr %}
+            {% if tipo == 'INTEIRA' %}
+                {% set ns.subtotal_ingressos = ns.subtotal_ingressos + sessao.preco_base %}
+            {% else %}
+                {% set ns.subtotal_ingressos = ns.subtotal_ingressos + (sessao.preco_base * 0.5) %}
+            {% endif %}
+        {% endfor %}
+    {% endif %}
+
+    <div class="seatmap-layout-grid">
+
+        <!-- Lista de Produtos da Bomboniere -->
+        <div>
+            <div style="margin-bottom: 24px;">
+                <h1 style="font-size: 2rem; margin-bottom: 8px; display: flex; align-items: center; gap: 12px;">
+                    <i class="fa-solid fa-popcorn" style="color: var(--accent-gold);"></i> Bomboniere CineSENAI
+                </h1>
+                <p style="color: var(--text-secondary); font-size: 0.95rem;">
+                    Pipocas crocantes na manteiga, combos exclusivos e guloseimas para a sua sessão perfeita!
+                </p>
+            </div>
+
+            <!-- Abas de Categorias de Produtos -->
+            <div class="filter-tabs" style="margin-bottom: 28px; display: inline-flex;">
+                <button type="button" class="snack-tab-btn filter-tab-btn active" data-categoria="todos">
+                    Todos os Produtos
+                </button>
+                <button type="button" class="snack-tab-btn filter-tab-btn" data-categoria="Combos">
+                    <i class="fa-solid fa-fire"></i> Combos
+                </button>
+                <button type="button" class="snack-tab-btn filter-tab-btn" data-categoria="Pipocas">
+                    Pipocas
+                </button>
+                <button type="button" class="snack-tab-btn filter-tab-btn" data-categoria="Bebidas">
+                    Bebidas
+                </button>
+                <button type="button" class="snack-tab-btn filter-tab-btn" data-categoria="Doces & Chocolates">
+                    Doces & Chocolates
+                </button>
+            </div>
+
+            <!-- Grid de Produtos -->
+            <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 24px;">
+                {% for p in produtos %}
+                <div class="snack-product-card" 
+                     data-categoria="{{ p.categoria }}"
+                     style="background: var(--bg-card); border: 1px solid var(--border-color); border-radius: var(--radius-md); overflow: hidden; display: flex; flex-direction: column; transition: var(--transition);">
+                    
+                    <div style="position: relative; height: 160px; overflow: hidden; background: #000;">
+                        <img src="{{ p.imagem_url }}" alt="{{ p.nome }}" style="width: 100%; height: 100%; object-fit: cover;">
+                        {% if p.destaque %}
+                        <span class="badge-tag badge-destaque" style="position: absolute; top: 12px; left: 12px; font-size: 0.7rem;">
+                            <i class="fa-solid fa-fire"></i> Mais Vendido
+                        </span>
+                        {% endif %}
+                        <span style="position: absolute; bottom: 8px; right: 8px; background: rgba(0,0,0,0.75); padding: 2px 8px; border-radius: var(--radius-full); font-size: 0.72rem; color: #fff;">
+                            {{ p.categoria }}
+                        </span>
+                    </div>
+
+                    <div style="padding: 18px; display: flex; flex-direction: column; flex: 1;">
+                        <h3 style="font-size: 1.1rem; margin-bottom: 6px;">{{ p.nome }}</h3>
+                        <p style="color: var(--text-secondary); font-size: 0.83rem; line-height: 1.5; margin-bottom: 16px; flex: 1;">
+                            {{ p.descricao }}
+                        </p>
+
+                        <div style="display: flex; align-items: center; justify-content: space-between; border-top: 1px solid var(--border-color); padding-top: 12px; margin-top: auto;">
+                            <div>
+                                <span style="font-size: 0.75rem; color: var(--text-muted); display: block;">Valor Unitário</span>
+                                <span style="font-size: 1.15rem; font-weight: 800; color: var(--accent-gold);">
+                                    {{ p.preco|moeda }}
+                                </span>
+                            </div>
+
+                            <!-- Contador Interativo (+ e -) -->
+                            <div style="display: flex; align-items: center; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-full); padding: 3px;">
+                                <button type="button" 
+                                        class="btn-counter-minus" 
+                                        data-product-id="{{ p.id }}" 
+                                        data-product-name="{{ p.nome }}" 
+                                        data-product-price="{{ p.preco }}"
+                                        style="width: 30px; height: 30px; border-radius: 50%; border: none; background: rgba(255,255,255,0.08); color: #fff; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                    -
+                                </button>
+                                
+                                <input type="text" 
+                                       id="qtd-input-{{ p.id }}" 
+                                       value="0" 
+                                       readonly 
+                                       style="width: 36px; text-align: center; background: none; border: none; color: #fff; font-weight: 700; font-size: 0.95rem;">
+                                
+                                <button type="button" 
+                                        class="btn-counter-plus" 
+                                        data-product-id="{{ p.id }}" 
+                                        data-product-name="{{ p.nome }}" 
+                                        data-product-price="{{ p.preco }}"
+                                        style="width: 30px; height: 30px; border-radius: 50%; border: none; background: var(--accent-gold); color: #000; cursor: pointer; display: flex; align-items: center; justify-content: center; font-weight: bold;">
+                                    +
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Barra Lateral de Resumo Completo -->
+        <aside class="seatmap-sidebar-card">
+            <div class="sidebar-session-info">
+                <img src="{{ sessao.poster_url }}" alt="{{ sessao.evento_titulo }}" class="sidebar-poster">
+                <div class="sidebar-session-details">
+                    <h3>{{ sessao.evento_titulo }}</h3>
+                    <div class="sidebar-session-meta">
+                        <span><i class="fa-solid fa-door-open" style="color: var(--accent-gold);"></i> {{ sessao.sala_nome }}</span>
+                        <span><i class="fa-regular fa-clock"></i> {{ sessao.data_hora|data_br }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Resumo dos Ingressos Selecionados -->
+            <div>
+                <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: var(--text-secondary); text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.5px;">
+                    1. Ingressos Escolhidos:
+                </h4>
+                <div style="background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: var(--radius-sm); padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                    <span style="font-size: 0.88rem; color: #fff;">
+                        {{ assentos_ids.split(',')|length if assentos_ids else 0 }} ingresso(s)
+                    </span>
+                    <span id="ingressosSubtotalVal" data-valor="{{ ns.subtotal_ingressos }}" style="font-weight: 700; color: var(--accent-gold);">
+                        {{ ns.subtotal_ingressos|moeda }}
+                    </span>
+                </div>
+            </div>
+
+            <!-- Itens de Bomboniere Adicionados -->
+            <div>
+                <h4 style="font-size: 0.95rem; margin-bottom: 8px; color: var(--text-secondary); text-transform: uppercase; font-size: 0.78rem; letter-spacing: 0.5px;">
+                    2. Itens da Bomboniere:
+                </h4>
+                <div id="bomboniereItemsList" style="display: flex; flex-direction: column; gap: 4px; min-height: 50px;">
+                    <p style="color: var(--text-muted); font-size: 0.85rem; font-style: italic;">
+                        Nenhum produto adicionado ainda.
+                    </p>
+                </div>
+            </div>
+
+            <!-- Totais e Ações -->
+            <div class="sidebar-total-block">
+                <div class="total-row">
+                    <span>Subtotal Bomboniere:</span>
+                    <span id="subtotalBomboniereVal">R$ 0,00</span>
+                </div>
+                <div class="total-row grand-total">
+                    <span>Total do Pedido:</span>
+                    <span id="checkoutGrandTotalVal" class="grand-total-val">
+                        {{ ns.subtotal_ingressos|moeda }}
+                    </span>
+                </div>
+
+                <button id="btnAvancarCheckout" type="button" class="btn btn-primary" style="width: 100%; margin-top: 12px;">
+                    <span>Avançar para Pagamento</span>
+                    <i class="fa-solid fa-arrow-right"></i>
+                </button>
+
+                <button id="btnPularCheckout" type="button" class="btn btn-outline" style="width: 100%; font-size: 0.85rem;">
+                    <span>Pular Bomboniere (Apenas Ingressos)</span>
+                </button>
+            </div>
+        </aside>
+
+    </div>
+
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="{{ url_for('static', filename='js/bomboniere.js') }}"></script>
+{% endblock %}
